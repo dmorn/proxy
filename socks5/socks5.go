@@ -36,7 +36,7 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/sync/errgroup"
+	"github.com/tecnoporto/proxy"
 )
 
 const (
@@ -178,7 +178,6 @@ func (s *Socks5) ListenAndServe(ctx context.Context, port int) error {
 	}
 	defer ln.Close()
 
-
 	errc := make(chan error)
 	defer close(errc)
 
@@ -262,59 +261,9 @@ func (s *Socks5) Handle(ctx context.Context, conn net.Conn) error {
 	defer tconn.Close()
 
 	// start proxying
-	return s.ProxyData(ctx, conn, tconn)
-}
-
-// ProxyData copies data from src to dst and the other way around.
-// Closes the connections when they are idle for more than the duration
-// described in ReadWriteTimeout.
-func (s *Socks5) ProxyData(ctx context.Context, src net.Conn, dst net.Conn) error {
-	g, ctx := errgroup.WithContext(ctx)
-
-	g.Go(func() error {
-		return s.copyData(ctx, src, dst)
-	})
-	g.Go(func() error {
-		return s.copyData(ctx, dst, src)
-	})
-
-	return g.Wait()
-}
-
-func (s *Socks5) copyData(ctx context.Context, src net.Conn, dst net.Conn) error {
-	errc := make(chan error, 1)
-	done := func() {
-		src.Close()
-		dst.Close()
-	}
-	timer := time.AfterFunc(s.ReadWriteTimeout, done)
-
-	go func() {
-		for {
-			_, err := io.CopyN(src, dst, s.ChunkSize)
-			errc <- err
-		}
-	}()
-
-	for {
-		select {
-		case <-ctx.Done():
-			done()
-			timer.Stop()
-			close(errc)
-
-			return ctx.Err()
-		case err := <-errc:
-			if err != nil {
-				return err
-			}
-
-			// io operations did not return any errors. Reset
-			// deadline and keep on transferring data
-			timer.Reset(s.ReadWriteTimeout)
-		}
-
-	}
+	idleTimeout, _ := time.ParseDuration("10s")
+	ctx = proxy.NewContext(ctx, idleTimeout)
+	return proxy.ProxyData(ctx, conn, tconn)
 }
 
 // ReadAddress reads hostname and port and converts them
@@ -476,4 +425,3 @@ func (s *Socks5) Port() int {
 func (s *Socks5) Proto() string {
 	return "socks5"
 }
-
