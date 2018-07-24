@@ -37,11 +37,7 @@ func (s *Socks5) Connect(ctx context.Context, conn net.Conn, target string) (net
 	buf := make([]byte, 0, 6+len(target))
 	buf = append(buf, socks5Version)
 
-	s.Lock()
-	d := s.Dialer
-	s.Unlock()
-
-	tconn, err := d.DialContext(ctx, "tcp", target)
+	tconn, err := s.DialContext(ctx, "tcp", target)
 	if err != nil {
 		// TODO(daniel): Respond with proper code
 		buf = append(buf, socks5RespHostUnreachable, socks5FieldReserved)

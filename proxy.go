@@ -1,10 +1,10 @@
 package proxy
 
 import (
-	"time"
-	"net"
 	"context"
 	"io"
+	"net"
+	"time"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -88,4 +88,3 @@ func proxyData(ctx context.Context, src net.Conn, dst net.Conn) error {
 
 	}
 }
-

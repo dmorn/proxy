@@ -33,7 +33,6 @@ import (
 	"io"
 	"net"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/tecnoporto/proxy"
@@ -94,22 +93,6 @@ var (
 	supportedMethods = []uint8{socks5MethodNoAuth}
 )
 
-const (
-	// TopicTunnelEvents is the topic where the tunnels updates are published
-	TopicTunnelEvents = "topic_tunnel_events"
-
-	// TopicNetUsage is the topic where bandwidth usage updates are published
-	TopicNetUsage = "topic_network_usage"
-)
-
-type Event int
-
-// Possible proxy operations.
-const (
-	EventPush Event = iota
-	EventPop
-)
-
 // Dialer is the interface that wraps the DialContext function.
 type Dialer interface {
 	// DialContext opens a connection to addr, which should
@@ -119,23 +102,14 @@ type Dialer interface {
 
 // Socks5 represents a SOCKS5 proxy server implementation.
 type Socks5 struct {
-	port int
-
-	ReadWriteTimeout time.Duration
-	ChunkSize        int64
-
-	stop chan struct{}
-
-	sync.Mutex
 	Dialer
+	port int
+	stop chan struct{}
 }
 
 // SOCKS5 returns a new Socks5 instance with default logger and dialer.
 func New(d Dialer) *Socks5 {
 	s := new(Socks5)
-
-	s.ReadWriteTimeout = 2 * time.Minute
-	s.ChunkSize = 1 * 1024
 	s.Dialer = d
 	s.stop = make(chan struct{})
 
@@ -411,17 +385,4 @@ func EncodePortBinary(port string) ([]byte, error) {
 
 	buf = append(buf, byte(p>>8), byte(p))
 	return buf, nil
-}
-
-// Port safely returns proxy's listening port.
-func (s *Socks5) Port() int {
-	s.Lock()
-	defer s.Unlock()
-
-	return s.port
-}
-
-// Proto returns the protocol used by the proxy in string format.
-func (s *Socks5) Proto() string {
-	return "socks5"
 }
