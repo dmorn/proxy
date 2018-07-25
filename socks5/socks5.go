@@ -106,8 +106,17 @@ type Socks5 struct {
 	port int
 }
 
-// SOCKS5 returns a new Socks5 instance with default logger and dialer.
-func New(d Dialer) *Socks5 {
+// New returns a new Socks5 instance that creates connections using the
+// default net.Dialer.
+func New() *Socks5 {
+	return &Socks5{
+		Dialer: new(net.Dialer),
+	}
+}
+
+// NewDialer returns a new Socks5 instance that creates connections
+// using d as dialer.
+func NewDialer(d Dialer) *Socks5 {
 	return &Socks5{
 		Dialer: d,
 	}
@@ -206,8 +215,7 @@ func (s *Socks5) Handle(ctx context.Context, conn net.Conn) error {
 	defer tconn.Close()
 
 	// start proxying
-	idleTimeout, _ := time.ParseDuration("10s")
-	ctx = proxy.NewContext(ctx, idleTimeout)
+	ctx = proxy.NewContext(ctx, time.Second*30, 1500)
 	return proxy.Data(ctx, conn, tconn)
 }
 
