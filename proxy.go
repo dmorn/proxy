@@ -37,24 +37,36 @@ import (
 
 type key int
 
-const idleTimeoutKey key = 0
+const (
+	idleTimeoutKey key = iota
+	transmittingUnitKey
+)
+
+// DefaultIdleTimeout is the default duration of 5 minutes used
+// to determine when to close an idle connection.
+const DefaultIdleTimeout time.Duration = time.Minute * 5
+
+// DTU is the default trasmitting unit used when copying data
+// from one connection to another.
+const DTU int64 = 1500
 
 // NewContext returns a context that stores the idleTimeout inside
 // its Value field.
-func NewContext(ctx context.Context, idleTimeout time.Duration) context.Context {
-	return context.WithValue(ctx, idleTimeoutKey, idleTimeout)
+func NewContext(ctx context.Context, idleTimeout time.Duration, tu int64) context.Context {
+	ctx = context.WithValue(ctx, idleTimeoutKey, idleTimeout)
+	return context.WithValue(ctx, transmittingUnitKey, tu)
 }
 
-// FromContext extracts the idleTimeout from the context.
-func FromContext(ctx context.Context) (time.Duration, bool) {
-	return ctx.Value(idleTimeoutKey).(time.Duration)
+// DurationFromContext extracts the idleTimeout from the context.
+func DurationFromContext(ctx context.Context) (time.Duration, bool) {
+	d, ok := ctx.Value(idleTimeoutKey).(time.Duration)
+	return d, ok
 }
 
-// DefaultIdleTimeout returns the default duration of 5 seconds used
-// to determine when to close an idle connection.
-func DefaultIdleTimeout() (d time.Duration) {
-	d, _ = time.ParseDuration("5s")
-	return
+// TUFromContext extracts the transmitting unit from context.
+func TUFromContext(ctx context.Context) (int64, bool) {
+	i, ok := ctx.Value(transmittingUnitKey).(int64)
+	return i, ok
 }
 
 // Data copies data from src to dst and the other way around.
@@ -65,19 +77,24 @@ func Data(ctx context.Context, src net.Conn, dst net.Conn) error {
 	g, ctx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
-		return s.proxyData(ctx, src, dst)
+		return proxyData(ctx, src, dst)
 	})
 	g.Go(func() error {
-		return s.proxyData(ctx, dst, src)
+		return proxyData(ctx, dst, src)
 	})
 
 	return g.Wait()
 }
 
 func proxyData(ctx context.Context, src net.Conn, dst net.Conn) error {
-	idle := DefaultIdleTimeout()
-	if d, ok := FromContext(ctx); ok {
+	idle := DefaultIdleTimeout
+	if d, ok := DurationFromContext(ctx); ok {
 		idle = d
+	}
+
+	tu := DTU
+	if i, ok := TUFromContext(ctx); ok {
+		tu = i
 	}
 
 	errc := make(chan error, 1)
@@ -89,7 +106,7 @@ func proxyData(ctx context.Context, src net.Conn, dst net.Conn) error {
 
 	go func() {
 		for {
-			_, err := io.CopyN(src, dst, s.ChunkSize)
+			_, err := io.CopyN(src, dst, tu)
 			errc <- err
 		}
 	}()
