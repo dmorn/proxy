@@ -57,11 +57,11 @@ func DefaultIdleTimeout() (d time.Duration) {
 	return
 }
 
-// ProxyData copies data from src to dst and the other way around.
+// Data copies data from src to dst and the other way around.
 // Closes the connections when no data is transferred for a defined duration, i.e.
 // the idleTimeout value stored in the context or the DefaultIdleTimeout, if the
 // former is not present.
-func ProxyData(ctx context.Context, src net.Conn, dst net.Conn) error {
+func Data(ctx context.Context, src net.Conn, dst net.Conn) error {
 	g, ctx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {

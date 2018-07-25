@@ -208,7 +208,7 @@ func (s *Socks5) Handle(ctx context.Context, conn net.Conn) error {
 	// start proxying
 	idleTimeout, _ := time.ParseDuration("10s")
 	ctx = proxy.NewContext(ctx, idleTimeout)
-	return proxy.ProxyData(ctx, conn, tconn)
+	return proxy.Data(ctx, conn, tconn)
 }
 
 // ReadAddress reads hostname and port and converts them
