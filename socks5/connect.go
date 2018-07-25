@@ -42,14 +42,14 @@ func (s *Socks5) Connect(ctx context.Context, conn net.Conn, target string) (net
 		// TODO(daniel): Respond with proper code
 		buf = append(buf, socks5RespHostUnreachable, socks5FieldReserved)
 		if _, err := conn.Write(buf); err != nil {
-			return nil, errors.New("socks5: unable to write connect response: " + err.Error())
+			return nil, errors.New("Connect: unable to write connect response: " + err.Error())
 		}
 
 		return nil, err
 	}
 	// BUG: sometimes there is no err BUT the connection is nil
 	if tconn == nil {
-		return nil, errors.New("socks5: connect returned nil connection")
+		return nil, errors.New("Connect: Dial returned nil connection")
 	}
 
 	buf = append(buf, socks5RespSuccess, socks5FieldReserved)

@@ -104,42 +104,13 @@ type Dialer interface {
 type Socks5 struct {
 	Dialer
 	port int
-	stop chan struct{}
 }
 
 // SOCKS5 returns a new Socks5 instance with default logger and dialer.
 func New(d Dialer) *Socks5 {
-	s := new(Socks5)
-	s.Dialer = d
-	s.stop = make(chan struct{})
-
-	return s
-}
-
-func (s *Socks5) Run(port int) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	errc := make(chan error)
-	go func() {
-		errc <- s.ListenAndServe(ctx, port)
-	}()
-
-	select {
-	case err := <-errc:
-		return err
-	case <-s.stop:
-		cancel()
-
-		<-errc // wait for ListenAndServe to return
-		return fmt.Errorf("socks5: stopped")
+	return &Socks5{
+		Dialer: d,
 	}
-}
-
-func (s *Socks5) Close() error {
-	s.stop <- struct{}{}
-
-	return nil
 }
 
 // ListenAndServe accepts and handles TCP connections
@@ -159,7 +130,7 @@ func (s *Socks5) ListenAndServe(ctx context.Context, port int) error {
 		for {
 			conn, err := ln.Accept()
 			if err != nil {
-				errc <- fmt.Errorf("socks5: cannot accept conn: %v", err)
+				errc <- fmt.Errorf("ListenAndServe: cannot accept conn: %v", err)
 				return
 			}
 
@@ -198,7 +169,7 @@ func (s *Socks5) Handle(ctx context.Context, conn net.Conn) error {
 	buf := make([]byte, 6+net.IPv4len)
 
 	if _, err := io.ReadFull(conn, buf[:3]); err != nil {
-		return errors.New("socks5: unable to read request: " + err.Error())
+		return errors.New("Handle: unable to read request: " + err.Error())
 	}
 
 	v := buf[0]   // protocol version
@@ -207,7 +178,7 @@ func (s *Socks5) Handle(ctx context.Context, conn net.Conn) error {
 
 	// Check version number
 	if v != socks5Version {
-		return errors.New("socks5: unsupported version: " + string(v))
+		return errors.New("Handle: unsupported version: " + string(v))
 	}
 
 	target, err := ReadAddress(conn)
@@ -227,7 +198,7 @@ func (s *Socks5) Handle(ctx context.Context, conn net.Conn) error {
 	case socks5CmdBind:
 		tconn, err = s.Bind(ctx, conn, target)
 	default:
-		return errors.New("socks5: unexpected CMD(" + strconv.Itoa(int(cmd)) + ")")
+		return errors.New("Handle: unexpected CMD(" + strconv.Itoa(int(cmd)) + ")")
 	}
 	if err != nil {
 		return err
@@ -269,7 +240,7 @@ func ReadHost(r io.Reader) (string, error) {
 	buf = buf[:1]
 
 	if _, err := io.ReadFull(r, buf); err != nil {
-		return "", errors.New("unable to read address type: " + err.Error())
+		return "", errors.New("ReadHost: unable to read address type: " + err.Error())
 	}
 
 	atype := buf[0] // address type
@@ -283,11 +254,11 @@ func ReadHost(r io.Reader) (string, error) {
 	case socks5FQDN:
 		_, err := io.ReadFull(r, buf[:1])
 		if err != nil {
-			return "", errors.New("failed to read domain length: " + err.Error())
+			return "", errors.New("ReadHost: failed to read domain length: " + err.Error())
 		}
 		bytesToRead = int(buf[0])
 	default:
-		return "", errors.New("got unknown address type " + strconv.Itoa(int(atype)))
+		return "", errors.New("ReadHost: got unknown address type " + strconv.Itoa(int(atype)))
 	}
 
 	if cap(buf) < bytesToRead {
@@ -296,7 +267,7 @@ func ReadHost(r io.Reader) (string, error) {
 		buf = buf[:bytesToRead]
 	}
 	if _, err := io.ReadFull(r, buf); err != nil {
-		return "", errors.New("failed to read address: " + err.Error())
+		return "", errors.New("ReadHost: failed to read address: " + err.Error())
 	}
 
 	var host string
@@ -313,7 +284,7 @@ func ReadHost(r io.Reader) (string, error) {
 func ReadPort(r io.Reader) (string, error) {
 	buf := make([]byte, 2)
 	if _, err := io.ReadFull(r, buf); err != nil {
-		return "", errors.New("failed to read port: " + err.Error())
+		return "", errors.New("ReadPort: " + err.Error())
 	}
 
 	port := int(buf[0])<<8 | int(buf[1])
@@ -326,7 +297,7 @@ func ReadPort(r io.Reader) (string, error) {
 func EncodeAddressBinary(addr string) ([]byte, error) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
-		return nil, errors.New("booster: unrecognised address format : " + addr + " : " + err.Error())
+		return nil, errors.New("EncodeAddressBinary: unrecognised address format : " + addr + " : " + err.Error())
 	}
 
 	hbuf, err := EncodeHostBinary(host)
@@ -361,7 +332,7 @@ func EncodeHostBinary(host string) ([]byte, error) {
 		buf = append(buf, ip...)
 	} else {
 		if len(host) > 255 {
-			return nil, errors.New("socks5: destination host name too long: " + host)
+			return nil, errors.New("EncodeHostBinary: destination host name too long: " + host)
 		}
 		buf = append(buf, socks5FQDN)
 		buf = append(buf, byte(len(host)))
@@ -377,10 +348,10 @@ func EncodePortBinary(port string) ([]byte, error) {
 	buf := make([]byte, 0, 2)
 	p, err := strconv.Atoi(port)
 	if err != nil {
-		return nil, errors.New("socks5: failed to parse port number: " + port)
+		return nil, errors.New("EncodePortBinary: failed to parse port number: " + port)
 	}
 	if p < 1 || p > 0xffff {
-		return nil, errors.New("socks5: port number out of range: " + port)
+		return nil, errors.New("EncodePortBinary: port number out of range: " + port)
 	}
 
 	buf = append(buf, byte(p>>8), byte(p))
