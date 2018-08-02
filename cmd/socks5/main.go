@@ -17,6 +17,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	log.Printf("socks5 listening on :%d", *port)
 	if err := p.ListenAndServe(ctx, *port); err != nil {
 		log.Fatal(err)
 	}
