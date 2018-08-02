@@ -87,17 +87,20 @@ func Data(ctx context.Context, src net.Conn, dst net.Conn) error {
 }
 
 func proxyData(ctx context.Context, src net.Conn, dst net.Conn) error {
+	// allowed idle timeout before closing the connection.
 	idle := DefaultIdleTimeout
 	if d, ok := DurationFromContext(ctx); ok {
 		idle = d
 	}
 
+	// transimitting unit
 	tu := DTU
 	if i, ok := TUFromContext(ctx); ok {
 		tu = i
 	}
 
 	errc := make(chan error, 1)
+
 	done := func() {
 		src.Close()
 		dst.Close()
@@ -109,6 +112,7 @@ func proxyData(ctx context.Context, src net.Conn, dst net.Conn) error {
 			_, err := io.CopyN(src, dst, tu)
 			errc <- err
 		}
+		close(errc)
 	}()
 
 	for {
@@ -116,7 +120,6 @@ func proxyData(ctx context.Context, src net.Conn, dst net.Conn) error {
 		case <-ctx.Done():
 			done()
 			timer.Stop()
-			close(errc)
 
 			return ctx.Err()
 		case err := <-errc:
