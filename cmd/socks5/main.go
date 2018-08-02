@@ -27,6 +27,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 
 	"github.com/tecnoporto/proxy/socks5"
@@ -36,6 +37,8 @@ var port = flag.Int("port", 1080, "server listening port")
 
 func main() {
 	flag.Parse()
+	flag.Usage()
+	fmt.Println()
 
 	p := socks5.New()
 	ctx, cancel := context.WithCancel(context.Background())
