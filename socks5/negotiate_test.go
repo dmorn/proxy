@@ -31,7 +31,7 @@ import (
 )
 
 func TestNegotiate(t *testing.T) {
-	s5 := new(socks5.Socks5)
+	s5 := new(socks5.Proxy)
 	conn := new(conn)
 
 	var tests = []struct {

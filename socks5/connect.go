@@ -32,7 +32,7 @@ import (
 
 // connect dials a new connection with target, which must be a canonical
 // address with host and port.
-func (s *Socks5) Connect(ctx context.Context, conn net.Conn, target string) (net.Conn, error) {
+func (s *Proxy) Connect(ctx context.Context, conn net.Conn, target string) (net.Conn, error) {
 	// cap is just an estimation
 	buf := make([]byte, 0, 6+len(target))
 	buf = append(buf, socks5Version)

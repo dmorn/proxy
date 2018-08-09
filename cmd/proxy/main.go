@@ -22,24 +22,45 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package socks5
+package main
 
 import (
 	"context"
+	"flag"
+	"log"
+	"os"
 	"errors"
-	"net"
+
+	"github.com/tecnoporto/proxy"
 )
 
-// bind, not yet implemented. See RFC 1928
-func (s *Proxy) Bind(ctx context.Context, conn net.Conn, target string) (net.Conn, error) {
+var port = flag.Int("port", 1080, "server listening port")
+var rawProto = flag.String("proto", "", "proxy protocol used. Available protocols: http, socks5")
 
-	// cap is just an estimation
-	buf := make([]byte, 0, 6+len(target))
-	buf = append(buf, socks5Version, socks5RespCommandNotSupported, socks5FieldReserved)
+var logger = log.New(os.Stdout, "", log.LstdFlags | log.Lshortfile)
 
-	if _, err := conn.Write(buf); err != nil {
-		return nil, errors.New("proxy: unable to write bind response: " + err.Error())
+func main() {
+	flag.Parse()
+
+	if *rawProto == "" {
+		logger.Fatal(errors.New("proto flag is required"))
 	}
 
-	return nil, errors.New("proxy: bind command not supported")
+	proto, err := proxy.ParseProto(*rawProto)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	p, err := proxy.New(proto, nil)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	log.Printf("proxy (%v) listening on :%d", p.Protocol(), *port)
+	if err := p.ListenAndServe(ctx, *port); err != nil {
+		log.Fatal(err)
+	}
 }

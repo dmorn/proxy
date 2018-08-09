@@ -32,7 +32,7 @@ import (
 
 // negotiate performs the very first method subnegotiation when handling a new
 // connection.
-func (s *Socks5) Negotiate(conn net.Conn) error {
+func (s *Proxy) Negotiate(conn net.Conn) error {
 
 	// len is just an estimation
 	buf := make([]byte, 7)

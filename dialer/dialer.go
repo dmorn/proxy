@@ -22,30 +22,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package main
+// Package dialer provides utility functions related to dialers.
+package dialer
 
-import (
+import(
 	"context"
-	"flag"
-	"fmt"
-	"log"
-
-	"github.com/tecnoporto/proxy/socks5"
+	"net"
 )
 
-var port = flag.Int("port", 1080, "server listening port")
+// Default provides a default dialer implementation ready to be used.
+var Default = new(net.Dialer)
 
-func main() {
-	flag.Parse()
-	flag.Usage()
-	fmt.Println()
-
-	p := socks5.New()
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	log.Printf("socks5 listening on :%d", *port)
-	if err := p.ListenAndServe(ctx, *port); err != nil {
-		log.Fatal(err)
-	}
+// Dialer is the interface that wraps the DialContext function.
+type Dialer interface {
+	// DialContext opens a connection to addr, which should
+	// be a canonical address with host and port, and returns
+	// a net.Conn, if no error occours.
+	DialContext(ctx context.Context, network, addr string) (net.Conn, error)
 }
+

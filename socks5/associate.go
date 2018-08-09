@@ -31,7 +31,7 @@ import (
 )
 
 // associate -- not yet implemented. See RFC 1928
-func (s *Socks5) Associate(ctx context.Context, conn net.Conn, target string) (net.Conn, error) {
+func (s *Proxy) Associate(ctx context.Context, conn net.Conn, target string) (net.Conn, error) {
 
 	// cap is just an estimation
 	buf := make([]byte, 0, 6+len(target))

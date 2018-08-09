@@ -35,7 +35,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/tecnoporto/proxy"
+	"github.com/tecnoporto/proxy/dialer"
+	"github.com/tecnoporto/proxy/transmit"
 )
 
 const (
@@ -93,38 +94,29 @@ var (
 	supportedMethods = []uint8{socks5MethodNoAuth}
 )
 
-// Dialer is the interface that wraps the DialContext function.
-type Dialer interface {
-	// DialContext opens a connection to addr, which should
-	// be a canonical address with host and port.
-	DialContext(ctx context.Context, network, addr string) (net.Conn, error)
-}
-
-// Socks5 represents a SOCKS5 proxy server implementation.
-type Socks5 struct {
-	Dialer
+// Proxy represents a SOCKS5 proxy server implementation.
+type Proxy struct {
+	dialer.Dialer
 	port int
 }
 
-// New returns a new Socks5 instance that creates connections using the
-// default net.Dialer.
-func New() *Socks5 {
-	return &Socks5{
-		Dialer: new(net.Dialer),
+// New returns a new Proxy instance that creates connections using the
+// default net.Dialer, if d is nil. Otherwise it creates the proxy using
+// the dialer passed.
+func New(d *dialer.Dialer) *Proxy {
+	var _d dialer.Dialer = dialer.Default
+	if d != nil {
+		_d = *d
 	}
-}
 
-// NewDialer returns a new Socks5 instance that creates connections
-// using d as dialer.
-func NewDialer(d Dialer) *Socks5 {
-	return &Socks5{
-		Dialer: d,
+	return &Proxy{
+		Dialer: _d,
 	}
 }
 
 // ListenAndServe accepts and handles TCP connections
 // using the SOCKS5 protocol.
-func (s *Socks5) ListenAndServe(ctx context.Context, port int) error {
+func (s *Proxy) ListenAndServe(ctx context.Context, port int) error {
 	p := strconv.Itoa(port)
 	ln, err := net.Listen("tcp", ":"+p)
 	if err != nil {
@@ -157,12 +149,16 @@ func (s *Socks5) ListenAndServe(ctx context.Context, port int) error {
 	}
 }
 
+func (s *Proxy) Protocol() string {
+	return "socks5"
+}
+
 // Handle performs the steps required to be SOCKS5 compliant.
 // See RFC 1928 for details.
 //
 // Should run in its own go routine, closes the connection
 // when returning.
-func (s *Socks5) Handle(ctx context.Context, conn net.Conn) error {
+func (s *Proxy) Handle(ctx context.Context, conn net.Conn) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	defer conn.Close()
@@ -215,8 +211,8 @@ func (s *Socks5) Handle(ctx context.Context, conn net.Conn) error {
 	defer tconn.Close()
 
 	// start proxying
-	ctx = proxy.NewContext(ctx, time.Second*30, 1500)
-	return proxy.Data(ctx, conn, tconn)
+	ctx = transmit.NewContext(ctx, time.Second*30, 1500)
+	return transmit.Data(ctx, conn, tconn)
 }
 
 // ReadAddress reads hostname and port and converts them

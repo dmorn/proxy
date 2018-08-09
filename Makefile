@@ -1,5 +1,5 @@
 all:
-	go build -o bin/socks5 cmd/socks5/main.go
+	go build -o bin/proxy cmd/proxy/main.go
 clean:
 	rm -r bin
 test:

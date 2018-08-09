@@ -22,115 +22,62 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-// Package proxy provides utility functions to proxy data through network
-// connections, with control over timeouts.
+// Package proxy provides wrappers around various proxy server
+// implementations.
 package proxy
 
 import (
 	"context"
-	"io"
-	"net"
-	"time"
+	"fmt"
 
-	"golang.org/x/sync/errgroup"
+	"github.com/tecnoporto/proxy/http"
+	"github.com/tecnoporto/proxy/socks5"
+	"github.com/tecnoporto/proxy/dialer"
 )
 
-type key int
+// Proxy explains how a proxy should behave.
+type Proxy interface {
+	// Protocol is the string representation of the protocol
+	// beign used.
+	Protocol() string
+	// ListenAndServe reveleas the proxy to the network.
+	ListenAndServe(ctx context.Context, port int) error
+}
 
+// Protocol is a wrapper around uint8.
+type Protocol uint8
+
+// Proxy protocol available.
 const (
-	idleTimeoutKey key = iota
-	transmittingUnitKey
+	HTTP Protocol = iota
+	SOCKS5
+	Unknown
 )
 
-// DefaultIdleTimeout is the default duration of 5 minutes used
-// to determine when to close an idle connection.
-const DefaultIdleTimeout time.Duration = time.Minute * 5
-
-// DTU is the default trasmitting unit used when copying data
-// from one connection to another.
-const DTU int64 = 1500
-
-// NewContext returns a context that stores the idleTimeout inside
-// its Value field.
-func NewContext(ctx context.Context, idleTimeout time.Duration, tu int64) context.Context {
-	ctx = context.WithValue(ctx, idleTimeoutKey, idleTimeout)
-	return context.WithValue(ctx, transmittingUnitKey, tu)
-}
-
-// DurationFromContext extracts the idleTimeout from the context.
-func DurationFromContext(ctx context.Context) (time.Duration, bool) {
-	d, ok := ctx.Value(idleTimeoutKey).(time.Duration)
-	return d, ok
-}
-
-// TUFromContext extracts the transmitting unit from context.
-func TUFromContext(ctx context.Context) (int64, bool) {
-	i, ok := ctx.Value(transmittingUnitKey).(int64)
-	return i, ok
-}
-
-// Data copies data from src to dst and the other way around.
-// Closes the connections when no data is transferred for a defined duration, i.e.
-// the idleTimeout value stored in the context or the DefaultIdleTimeout, if the
-// former is not present.
-func Data(ctx context.Context, src net.Conn, dst net.Conn) error {
-	g, ctx := errgroup.WithContext(ctx)
-
-	g.Go(func() error {
-		return proxyData(ctx, src, dst)
-	})
-	g.Go(func() error {
-		return proxyData(ctx, dst, src)
-	})
-
-	return g.Wait()
-}
-
-func proxyData(ctx context.Context, src net.Conn, dst net.Conn) error {
-	// allowed idle timeout before closing the connection.
-	idle := DefaultIdleTimeout
-	if d, ok := DurationFromContext(ctx); ok {
-		idle = d
-	}
-
-	// transimitting unit
-	tu := DTU
-	if i, ok := TUFromContext(ctx); ok {
-		tu = i
-	}
-
-	errc := make(chan error, 1)
-
-	done := func() {
-		src.Close()
-		dst.Close()
-	}
-	timer := time.AfterFunc(idle, done)
-
-	go func() {
-		for {
-			_, err := io.CopyN(src, dst, tu)
-			errc <- err
-		}
-		close(errc)
-	}()
-
-	for {
-		select {
-		case <-ctx.Done():
-			done()
-			timer.Stop()
-
-			return ctx.Err()
-		case err := <-errc:
-			if err != nil {
-				return err
-			}
-
-			// io operations did not return any errors. Reset
-			// deadline and keep on transferring data
-			timer.Reset(idle)
-		}
-
+// ParseProto takes a string as input and returns its Protocol value,
+// is one is recognised. Otherwise it returns an error.
+func ParseProto(s string) (Protocol, error) {
+	switch s {
+	case "http", "HTTP":
+		return HTTP, nil
+	case "socks5", "SOCKS5":
+		return SOCKS5, nil
+	default:
+		return Unknown, fmt.Errorf("unrecognised proto: %s", s)
 	}
 }
+
+// New returns a new proxy instance that speaks the protocol assigned.
+// d can also be nil, in that case the proxy will use a default dialer,
+// usually a bare net.Dialer.
+func New(p Protocol, d *dialer.Dialer) (Proxy, error) {
+	switch p {
+	case HTTP:
+		return http.New(d), nil
+	case SOCKS5:
+		return socks5.New(d), nil
+	default:
+		return nil, fmt.Errorf("unrecognised protocol: %v", p)
+	}
+}
+
