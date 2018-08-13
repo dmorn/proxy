@@ -26,10 +26,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"log"
 	"os"
-	"errors"
 
 	"github.com/tecnoporto/proxy"
 )
@@ -37,7 +37,7 @@ import (
 var port = flag.Int("port", 1080, "server listening port")
 var rawProto = flag.String("proto", "", "proxy protocol used. Available protocols: http, socks5")
 
-var logger = log.New(os.Stdout, "", log.LstdFlags | log.Lshortfile)
+var logger = log.New(os.Stdout, "", log.LstdFlags|log.Llongfile)
 
 func main() {
 	flag.Parse()

@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-// Package transmit provides utility functions to proxy data through 
+// Package transmit provides utility functions to proxy data through
 // network connections, with control over timeouts.
 package transmit
 

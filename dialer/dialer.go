@@ -25,7 +25,7 @@ SOFTWARE.
 // Package dialer provides utility functions related to dialers.
 package dialer
 
-import(
+import (
 	"context"
 	"net"
 )
@@ -40,4 +40,3 @@ type Dialer interface {
 	// a net.Conn, if no error occours.
 	DialContext(ctx context.Context, network, addr string) (net.Conn, error)
 }
-

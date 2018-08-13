@@ -30,9 +30,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/tecnoporto/proxy/dialer"
 	"github.com/tecnoporto/proxy/http"
 	"github.com/tecnoporto/proxy/socks5"
-	"github.com/tecnoporto/proxy/dialer"
 )
 
 // Proxy explains how a proxy should behave.
@@ -80,4 +80,3 @@ func New(p Protocol, d *dialer.Dialer) (Proxy, error) {
 		return nil, fmt.Errorf("unrecognised protocol: %v", p)
 	}
 }
-
