@@ -50,6 +50,7 @@ type Protocol uint8
 // Proxy protocol available.
 const (
 	HTTP Protocol = iota
+	HTTPS
 	SOCKS5
 	Unknown
 )
@@ -60,6 +61,8 @@ func ParseProto(s string) (Protocol, error) {
 	switch s {
 	case "http", "HTTP":
 		return HTTP, nil
+	case "https", "HTTPS":
+		return HTTPS, nil
 	case "socks5", "SOCKS5":
 		return SOCKS5, nil
 	default:

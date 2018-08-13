@@ -35,7 +35,7 @@ import (
 )
 
 var port = flag.Int("port", 1080, "server listening port")
-var rawProto = flag.String("proto", "", "proxy protocol used. Available protocols: http, socks5")
+var rawProto = flag.String("proto", "", "proxy protocol used. Available protocols: http, https, socks5")
 
 var logger = log.New(os.Stdout, "", log.LstdFlags|log.Llongfile)
 

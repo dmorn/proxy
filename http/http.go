@@ -1,15 +1,44 @@
+/*
+MIT License
+
+Copyright (c) 2018 tecnoporto
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
+// Package http provides a http proxy implementation.
 package http
 
 import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/tecnoporto/proxy/dialer"
 	"github.com/tecnoporto/proxy/transmit"
 )
+
+var logger = log.New(os.Stdout, "", log.LstdFlags|log.Llongfile)
 
 // Proxy represents a HTTP proxy server implementation.
 type Proxy struct {
@@ -86,11 +115,7 @@ func (p *Proxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 
 	defer resp.Body.Close()
 
-	if err := copyHeader(w.Header(), resp.Header); err != nil {
-		// TODO: correct status code
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	CopyHeader(w.Header(), resp.Header)
 	w.WriteHeader(http.StatusOK)
 
 	// copy data
@@ -122,15 +147,11 @@ func (p *Proxy) handleConnect(w http.ResponseWriter, r *http.Request) {
 
 	// copy data
 	ctx := transmit.NewContext(context.Background(), time.Second*30, 1500)
-	if err = transmit.Data(ctx, dst_conn, src_conn); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	transmit.Data(ctx, dst_conn, src_conn)
 }
 
-func copyHeader(dst, src http.Header) error {
+func CopyHeader(dst, src http.Header) {
 	for k, v := range src {
 		dst[k] = v
 	}
-	return nil
 }
