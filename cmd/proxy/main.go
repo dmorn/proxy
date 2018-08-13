@@ -37,6 +37,9 @@ import (
 var port = flag.Int("port", 1080, "server listening port")
 var rawProto = flag.String("proto", "", "proxy protocol used. Available protocols: http, https, socks5")
 
+var cert = flag.String("cert", "server.pem", "path to cert file")
+var key = flag.String("key", "server.key", "path to key file")
+
 var logger = log.New(os.Stdout, "", log.LstdFlags|log.Llongfile)
 
 func main() {
@@ -51,7 +54,17 @@ func main() {
 		logger.Fatal(err)
 	}
 
-	p, err := proxy.New(proto, nil)
+	var p proxy.Proxy
+	switch proto {
+	case proxy.HTTP:
+		p, err = proxy.NewHTTP(nil)
+	case proxy.SOCKS5:
+		p, err = proxy.NewSOCKS5(nil)
+	case proxy.HTTPS:
+		p, err = proxy.NewHTTPS(nil, *cert, *key)
+	default:
+		err = errors.New("Protocol (" + *rawProto + ") is not yet supported")
+	}
 	if err != nil {
 		logger.Fatal(err)
 	}

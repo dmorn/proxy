@@ -70,16 +70,24 @@ func ParseProto(s string) (Protocol, error) {
 	}
 }
 
-// New returns a new proxy instance that speaks the protocol assigned.
+// NewHTTP returns a new HTTP proxy instance that speaks the protocol assigned.
 // d can also be nil, in that case the proxy will use a default dialer,
 // usually a bare net.Dialer.
-func New(p Protocol, d *dialer.Dialer) (Proxy, error) {
-	switch p {
-	case HTTP:
-		return http.New(d), nil
-	case SOCKS5:
-		return socks5.New(d), nil
-	default:
-		return nil, fmt.Errorf("unrecognised protocol: %v", p)
-	}
+func NewHTTP(d *dialer.Dialer) (Proxy, error) {
+	return http.New(d), nil
 }
+
+// NewHTTPS returns a new HTTPS proxy instance that speaks the protocol assigned.
+// d can also be nil, in that case the proxy will use a default dialer,
+// usually a bare net.Dialer.
+func NewHTTPS(d *dialer.Dialer, cert, key string) (Proxy, error) {
+	return http.NewTLS(d, cert, key), nil
+}
+
+// NewSOCKS5 returns a new SOCKS5 proxy instance that speaks the protocol assigned.
+// d can also be nil, in that case the proxy will use a default dialer,
+// usually a bare net.Dialer.
+func NewSOCKS5(d *dialer.Dialer) (Proxy, error) {
+	return socks5.New(d), nil
+}
+

@@ -12,5 +12,6 @@
 *.out
 
 *.swp
+*.pem
 
 bin/

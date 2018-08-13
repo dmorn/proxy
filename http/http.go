@@ -47,7 +47,15 @@ type Proxy struct {
 
 	s *http.Server
 	c *http.Client
+
+	tls *tls
 }
+
+type tls struct {
+	certPath string
+	keyPath string
+}
+
 
 // New returns a new Proxy instance that creates connections using the
 // default net.Dialer, if d is nil. Otherwise it creates the proxy using
@@ -77,11 +85,26 @@ func New(d *dialer.Dialer) *Proxy {
 	return p
 }
 
+func NewTLS(d *dialer.Dialer, cert, key string) *Proxy {
+	p := New(d)
+	p.tls = &tls{
+		certPath: cert,
+		keyPath: key,
+	}
+
+	return p
+}
+
 func (p *Proxy) ListenAndServe(ctx context.Context, port int) error {
 	c := make(chan error)
 	go func() {
 		p.s.Addr = fmt.Sprintf(":%d", port)
-		c <- p.s.ListenAndServe()
+
+		if p.tls == nil {
+			c <- p.s.ListenAndServe()
+		} else {
+			c <- p.s.ListenAndServeTLS(p.tls.certPath, p.tls.keyPath)
+		}
 	}()
 
 	select {
@@ -95,7 +118,11 @@ func (p *Proxy) ListenAndServe(ctx context.Context, port int) error {
 }
 
 func (p *Proxy) Protocol() string {
-	return "http"
+	if p.tls == nil {
+		return "http"
+	} else {
+		return "https"
+	}
 }
 
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
