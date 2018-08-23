@@ -30,6 +30,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"os/signal"
 
 	"github.com/tecnoporto/proxy"
 )
@@ -58,12 +59,12 @@ func main() {
 	switch proto {
 	case proxy.HTTP:
 		p, err = proxy.NewHTTP(nil)
-	case proxy.SOCKS5:
-		p, err = proxy.NewSOCKS5(nil)
 	case proxy.HTTPS:
 		p, err = proxy.NewHTTPS(nil, *cert, *key)
+	case proxy.SOCKS5:
+		p, err = proxy.NewSOCKS5(nil)
 	default:
-		err = errors.New("Protocol (" + *rawProto + ") is not yet supported")
+		err = errors.New("protocol (" + *rawProto + ") is not yet supported")
 	}
 	if err != nil {
 		logger.Fatal(err)
@@ -71,6 +72,15 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill)
+
+	go func() {
+		for _ = range c {
+			cancel()
+		}
+	}()
 
 	log.Printf("proxy (%v) listening on :%d", p.Protocol(), *port)
 	if err := p.ListenAndServe(ctx, *port); err != nil {
