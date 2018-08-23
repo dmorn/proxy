@@ -172,7 +172,7 @@ func (p *Proxy) handleConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// copy data
+	// copy data from src_ to dst_conn and vice versa
 	ctx := transmit.NewContext(context.Background(), time.Second*30, 1500)
 	transmit.Data(ctx, dst_conn, src_conn)
 }
