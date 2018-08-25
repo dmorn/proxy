@@ -27,10 +27,12 @@ package http
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"net/http/httputil"
 	"os"
 	"time"
 
@@ -38,7 +40,7 @@ import (
 	"github.com/tecnoporto/proxy/transmit"
 )
 
-var logger = log.New(os.Stdout, "", log.LstdFlags|log.Llongfile)
+var logger = log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
 
 // Proxy represents a HTTP proxy server implementation.
 type Proxy struct {
@@ -48,14 +50,13 @@ type Proxy struct {
 	s *http.Server
 	c *http.Client
 
-	tls *tls
+	tls *tlsConfig
 }
 
-type tls struct {
+type tlsConfig struct {
 	certPath string
-	keyPath string
+	keyPath  string
 }
-
 
 // New returns a new Proxy instance that creates connections using the
 // default net.Dialer, if d is nil. Otherwise it creates the proxy using
@@ -73,6 +74,7 @@ func New(d *dialer.Dialer) *Proxy {
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
+		TLSNextProto:   make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
 
 	tr := &http.Transport{
@@ -87,9 +89,9 @@ func New(d *dialer.Dialer) *Proxy {
 
 func NewTLS(d *dialer.Dialer, cert, key string) *Proxy {
 	p := New(d)
-	p.tls = &tls{
+	p.tls = &tlsConfig{
 		certPath: cert,
-		keyPath: key,
+		keyPath:  key,
 	}
 
 	return p
@@ -126,6 +128,10 @@ func (p *Proxy) Protocol() string {
 }
 
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if dump, err := httputil.DumpRequest(r, false); err == nil {
+		logger.Printf("%s\n", dump)
+	}
+
 	if r.Method == http.MethodConnect {
 		p.handleConnect(w, r)
 	} else {
@@ -134,14 +140,19 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p *Proxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
+	// Cleanup header fields to relvant to the upstream
+	CleanHeader(&r.Header)
+
 	resp, err := p.c.Transport.RoundTrip(r)
 	if err != nil {
+		logger.Println(err)
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return
 	}
 
 	defer resp.Body.Close()
 
+	CleanHeader(&resp.Header)
 	CopyHeader(w.Header(), resp.Header)
 	w.WriteHeader(http.StatusOK)
 
@@ -153,6 +164,7 @@ func (p *Proxy) handleConnect(w http.ResponseWriter, r *http.Request) {
 	// create remote connection
 	dst_conn, err := p.DialContext(context.Background(), "tcp", r.Host)
 	if err != nil {
+		logger.Println(err)
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return
 	}
@@ -162,12 +174,15 @@ func (p *Proxy) handleConnect(w http.ResponseWriter, r *http.Request) {
 	// take over source connection
 	hijacker, ok := w.(http.Hijacker)
 	if !ok {
-		http.Error(w, "Proxy is not able to take over source connection. Hijacking is not supported", http.StatusInternalServerError)
+		mess := "Proxy is not able to take over source connection. Hijacking is not supported"
+		logger.Println(mess)
+		http.Error(w, mess, http.StatusInternalServerError)
 		return
 	}
 
 	src_conn, _, err := hijacker.Hijack()
 	if err != nil {
+		logger.Println(err)
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 		return
 	}
@@ -181,4 +196,14 @@ func CopyHeader(dst, src http.Header) {
 	for k, v := range src {
 		dst[k] = v
 	}
+}
+
+// CleanHeader cleans the header from the fields that are not intended to
+// be relevant to downstream recipients. See RFC 7230, 6.1.
+func CleanHeader(h *http.Header) {
+	k := "Connection"
+	v := h.Get(k)
+
+	h.Del(v) // delete the field referenced by the Connection field
+	h.Del(k) // delete the Connection field itself
 }
