@@ -90,4 +90,3 @@ func NewHTTPS(d *dialer.Dialer, cert, key string) (Proxy, error) {
 func NewSOCKS5(d *dialer.Dialer) (Proxy, error) {
 	return socks5.New(d), nil
 }
-
