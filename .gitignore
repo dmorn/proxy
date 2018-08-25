@@ -12,6 +12,7 @@
 *.out
 
 *.swp
+*.pem
 
 bin/
 .cert/

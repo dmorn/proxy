@@ -30,12 +30,16 @@ import (
 	"flag"
 	"log"
 	"os"
+	"os/signal"
 
 	"github.com/tecnoporto/proxy"
 )
 
 var port = flag.Int("port", 1080, "server listening port")
 var rawProto = flag.String("proto", "", "proxy protocol used. Available protocols: http, https, socks5")
+
+var cert = flag.String("cert", "server.pem", "path to cert file")
+var key = flag.String("key", "server.key", "path to key file")
 
 var logger = log.New(os.Stdout, "", log.LstdFlags|log.Llongfile)
 
@@ -51,13 +55,32 @@ func main() {
 		logger.Fatal(err)
 	}
 
-	p, err := proxy.New(proto, nil)
+	var p proxy.Proxy
+	switch proto {
+	case proxy.HTTP:
+		p, err = proxy.NewHTTP(nil)
+	case proxy.HTTPS:
+		p, err = proxy.NewHTTPS(nil, *cert, *key)
+	case proxy.SOCKS5:
+		p, err = proxy.NewSOCKS5(nil)
+	default:
+		err = errors.New("protocol (" + *rawProto + ") is not yet supported")
+	}
 	if err != nil {
 		logger.Fatal(err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill)
+
+	go func() {
+		for _ = range c {
+			cancel()
+		}
+	}()
 
 	log.Printf("proxy (%v) listening on :%d", p.Protocol(), *port)
 	if err := p.ListenAndServe(ctx, *port); err != nil {
