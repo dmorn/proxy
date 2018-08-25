@@ -149,9 +149,9 @@ func (p *Proxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 
 	CleanHeader(&resp.Header)
 	CopyHeader(w.Header(), resp.Header)
+
 	w.WriteHeader(http.StatusOK)
 
-	// copy data
 	io.Copy(w, resp.Body)
 }
 
