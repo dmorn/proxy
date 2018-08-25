@@ -32,7 +32,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"net/http/httputil"
 	"os"
 	"time"
 
@@ -128,10 +127,6 @@ func (p *Proxy) Protocol() string {
 }
 
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if dump, err := httputil.DumpRequest(r, false); err == nil {
-		logger.Printf("%s\n", dump)
-	}
-
 	if r.Method == http.MethodConnect {
 		p.handleConnect(w, r)
 	} else {
