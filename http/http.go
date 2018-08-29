@@ -57,17 +57,10 @@ type tlsConfig struct {
 	keyPath  string
 }
 
-// New returns a new Proxy instance that creates connections using the
-// default net.Dialer, if d is nil. Otherwise it creates the proxy using
-// the dialer passed.
-func New(d *dialer.Dialer) *Proxy {
-	var _d dialer.Dialer = dialer.Default
-	if d != nil {
-		_d = *d
-	}
-
+// New returns a new Proxy instance that serves HTTP connections.
+func New() *Proxy {
 	p := new(Proxy)
-	p.Dialer = _d
+	p.Dialer = dialer.Default
 	p.s = &http.Server{
 		Handler:        p,
 		ReadTimeout:    10 * time.Second,
@@ -86,8 +79,9 @@ func New(d *dialer.Dialer) *Proxy {
 	return p
 }
 
-func NewTLS(d *dialer.Dialer, cert, key string) *Proxy {
-	p := New(d)
+// New returns a new Proxy instance that servers HTTPS connections.
+func NewTLS(cert, key string) *Proxy {
+	p := New()
 	p.tls = &tlsConfig{
 		certPath: cert,
 		keyPath:  key,
@@ -96,6 +90,15 @@ func NewTLS(d *dialer.Dialer, cert, key string) *Proxy {
 	return p
 }
 
+// DialWith makes the receiver dial new connections using d, if d != nil.
+func (p *Proxy) DialWith(d *dialer.Dialer) {
+	if d != nil {
+		p.Dialer = *d
+	}
+}
+
+// ListenAndServe reveals the proxy to the network. If p is storing a complete tls
+// configuration, p will serve HTTPS connections.
 func (p *Proxy) ListenAndServe(ctx context.Context, port int) error {
 	c := make(chan error)
 	go func() {

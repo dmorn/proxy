@@ -58,11 +58,11 @@ func main() {
 	var p proxy.Proxy
 	switch proto {
 	case proxy.HTTP:
-		p, err = proxy.NewHTTP(nil)
+		p, err = proxy.NewHTTP()
 	case proxy.HTTPS:
-		p, err = proxy.NewHTTPS(nil, *cert, *key)
+		p, err = proxy.NewHTTPS(*cert, *key)
 	case proxy.SOCKS5:
-		p, err = proxy.NewSOCKS5(nil)
+		p, err = proxy.NewSOCKS5()
 	default:
 		err = errors.New("protocol (" + *rawProto + ") is not yet supported")
 	}

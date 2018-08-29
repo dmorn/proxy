@@ -42,6 +42,9 @@ type Proxy interface {
 	Protocol() string
 	// ListenAndServe reveleas the proxy to the network.
 	ListenAndServe(ctx context.Context, port int) error
+	// DialWith makes the proxy dial new connections with the
+	// assigned dialer.
+	DialWith(d *dialer.Dialer)
 }
 
 // Protocol is a wrapper around uint8.
@@ -73,20 +76,20 @@ func ParseProto(s string) (Protocol, error) {
 // NewHTTP returns a new HTTP proxy instance that speaks the protocol assigned.
 // d can also be nil, in that case the proxy will use a default dialer,
 // usually a bare net.Dialer.
-func NewHTTP(d *dialer.Dialer) (Proxy, error) {
-	return http.New(d), nil
+func NewHTTP() (Proxy, error) {
+	return http.New(), nil
 }
 
 // NewHTTPS returns a new HTTPS proxy instance that speaks the protocol assigned.
 // d can also be nil, in that case the proxy will use a default dialer,
 // usually a bare net.Dialer.
-func NewHTTPS(d *dialer.Dialer, cert, key string) (Proxy, error) {
-	return http.NewTLS(d, cert, key), nil
+func NewHTTPS(cert, key string) (Proxy, error) {
+	return http.NewTLS(cert, key), nil
 }
 
 // NewSOCKS5 returns a new SOCKS5 proxy instance that speaks the protocol assigned.
 // d can also be nil, in that case the proxy will use a default dialer,
 // usually a bare net.Dialer.
-func NewSOCKS5(d *dialer.Dialer) (Proxy, error) {
-	return socks5.New(d), nil
+func NewSOCKS5() (Proxy, error) {
+	return socks5.New(), nil
 }

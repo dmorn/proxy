@@ -100,17 +100,17 @@ type Proxy struct {
 	port int
 }
 
-// New returns a new Proxy instance that creates connections using the
-// default net.Dialer, if d is nil. Otherwise it creates the proxy using
-// the dialer passed.
-func New(d *dialer.Dialer) *Proxy {
-	var _d dialer.Dialer = dialer.Default
-	if d != nil {
-		_d = *d
-	}
-
+// New returns a new Proxy instance.
+func New() *Proxy {
 	return &Proxy{
-		Dialer: _d,
+		Dialer: dialer.Default,
+	}
+}
+
+// DialWith make the receiver use d for dialing TCP connections, if d != nil.
+func (s *Proxy) DialWith(d *dialer.Dialer) {
+	if d != nil {
+		s.Dialer = *d
 	}
 }
 
