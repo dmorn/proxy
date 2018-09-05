@@ -46,8 +46,8 @@ type Proxy struct {
 	dialer.Dialer
 	port int
 
-	s *http.Server
-	c *http.Client
+	S *http.Server
+	C *http.Client
 
 	tls *tlsConfig
 }
@@ -61,7 +61,7 @@ type tlsConfig struct {
 func New() *Proxy {
 	p := new(Proxy)
 	p.Dialer = dialer.Default
-	p.s = &http.Server{
+	p.S = &http.Server{
 		Handler:        p,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
@@ -74,7 +74,7 @@ func New() *Proxy {
 		IdleConnTimeout:    30 * time.Second,
 		DisableCompression: true,
 	}
-	p.c = &http.Client{Transport: tr}
+	p.C = &http.Client{Transport: tr}
 
 	return p
 }
@@ -102,18 +102,18 @@ func (p *Proxy) DialWith(d *dialer.Dialer) {
 func (p *Proxy) ListenAndServe(ctx context.Context, port int) error {
 	c := make(chan error)
 	go func() {
-		p.s.Addr = fmt.Sprintf(":%d", port)
+		p.S.Addr = fmt.Sprintf(":%d", port)
 
 		if p.tls == nil {
-			c <- p.s.ListenAndServe()
+			c <- p.S.ListenAndServe()
 		} else {
-			c <- p.s.ListenAndServeTLS(p.tls.certPath, p.tls.keyPath)
+			c <- p.S.ListenAndServeTLS(p.tls.certPath, p.tls.keyPath)
 		}
 	}()
 
 	select {
 	case <-ctx.Done():
-		p.s.Shutdown(context.Background())
+		p.S.Shutdown(context.TODO())
 		<-c
 		return ctx.Err()
 	case err := <-c:
@@ -141,7 +141,7 @@ func (p *Proxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 	// Cleanup header fields to relvant to the upstream
 	CleanHeader(&r.Header)
 
-	resp, err := p.c.Transport.RoundTrip(r)
+	resp, err := p.C.Transport.RoundTrip(r)
 	if err != nil {
 		logger.Println(err)
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
