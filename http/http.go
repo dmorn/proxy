@@ -199,7 +199,7 @@ func CopyHeader(dst, src http.Header) {
 // CleanHeader cleans the header from the fields that are not intended to
 // be relevant to downstream recipients. See RFC 7230, 6.1.
 func CleanHeader(h *http.Header) {
-	k := "Connection"
+	k := http.CanonicalHeaderKey("Connection")
 	v := h.Get(k)
 
 	h.Del(v) // delete the field referenced by the Connection field
