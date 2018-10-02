@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-// Package socks5 provides a SOCKS5 server implementation. See RFC1928
+// Package socks5 provides a SOCKS5 server implementation. See RFC 1928
 // for protocol specification.
 package socks5
 
@@ -296,7 +296,7 @@ func ReadPort(r io.Reader) (string, error) {
 }
 
 // EncodeAddressBinary expects as input a canonical host:port address and
-// returns the binary representation as speccified in the socks5 protocol (RFC1928).
+// returns the binary representation as speccified in the socks5 protocol (RFC 1928).
 // Booster uses the same encoding.
 func EncodeAddressBinary(addr string) ([]byte, error) {
 	host, port, err := net.SplitHostPort(addr)
@@ -322,7 +322,7 @@ func EncodeAddressBinary(addr string) ([]byte, error) {
 }
 
 // EncodeHostBinary encodes a canonical host (IPv4, IPv6, FQDN) into a
-// byte slice. Format follows RFC1928.
+// byte slice. Format follows RFC 1928.
 func EncodeHostBinary(host string) ([]byte, error) {
 	buf := make([]byte, 0, 1+len(host)) // 1 if fqdn (address size)
 
@@ -347,7 +347,7 @@ func EncodeHostBinary(host string) ([]byte, error) {
 }
 
 // EncodePortBinary encodes a canonical port into 2 bytes.
-// Format follows RFC1928.
+// Format follows RFC 1928.
 func EncodePortBinary(port string) ([]byte, error) {
 	buf := make([]byte, 0, 2)
 	p, err := strconv.Atoi(port)
