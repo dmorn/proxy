@@ -25,8 +25,8 @@ SOFTWARE.
 package http_test
 
 import (
-	"testing"
 	"net/http"
+	"testing"
 
 	proxy_http "github.com/tecnoporto/proxy/http"
 )
@@ -40,7 +40,6 @@ func TestCleanHeader(t *testing.T) {
 	h.Add(connK, fooK)
 
 	proxy_http.CleanHeader(&h)
-
 
 	if s := h.Get(fooK); s != "" {
 		t.Fatalf("field %v should be empty, found %v instead", fooK, s)

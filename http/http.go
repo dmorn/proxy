@@ -32,6 +32,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/http/httputil"
 	"os"
 	"time"
 
@@ -48,13 +49,6 @@ type Proxy struct {
 
 	S *http.Server
 	C *http.Client
-
-	tls *tlsConfig
-}
-
-type tlsConfig struct {
-	certPath string
-	keyPath  string
 }
 
 // New returns a new Proxy instance that serves HTTP connections.
@@ -79,17 +73,6 @@ func New() *Proxy {
 	return p
 }
 
-// New returns a new Proxy instance that servers HTTPS connections.
-func NewTLS(cert, key string) *Proxy {
-	p := New()
-	p.tls = &tlsConfig{
-		certPath: cert,
-		keyPath:  key,
-	}
-
-	return p
-}
-
 // DialWith makes the receiver dial new connections using d, if d != nil.
 func (p *Proxy) DialWith(d *dialer.Dialer) {
 	if d != nil {
@@ -103,12 +86,7 @@ func (p *Proxy) ListenAndServe(ctx context.Context, port int) error {
 	c := make(chan error)
 	go func() {
 		p.S.Addr = fmt.Sprintf(":%d", port)
-
-		if p.tls == nil {
-			c <- p.S.ListenAndServe()
-		} else {
-			c <- p.S.ListenAndServeTLS(p.tls.certPath, p.tls.keyPath)
-		}
+		c <- p.S.ListenAndServe()
 	}()
 
 	select {
@@ -122,14 +100,15 @@ func (p *Proxy) ListenAndServe(ctx context.Context, port int) error {
 }
 
 func (p *Proxy) Protocol() string {
-	if p.tls == nil {
-		return "http"
-	} else {
-		return "https"
-	}
+	return "http"
 }
 
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	dumpReq, err := httputil.DumpRequest(r, false)
+	if err == nil {
+		log.Printf("%s", dumpReq)
+	}
+
 	if r.Method == http.MethodConnect {
 		p.handleConnect(w, r)
 	} else {

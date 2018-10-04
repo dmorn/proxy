@@ -38,9 +38,6 @@ import (
 var port = flag.Int("port", 1080, "server listening port")
 var rawProto = flag.String("proto", "", "proxy protocol used. Available protocols: http, https, socks5")
 
-var cert = flag.String("cert", "server.pem", "path to cert file")
-var key = flag.String("key", "server.key", "path to key file")
-
 var logger = log.New(os.Stdout, "", log.LstdFlags|log.Llongfile)
 
 func main() {
@@ -59,8 +56,6 @@ func main() {
 	switch proto {
 	case proxy.HTTP:
 		p, err = proxy.NewHTTP()
-	case proxy.HTTPS:
-		p, err = proxy.NewHTTPS(*cert, *key)
 	case proxy.SOCKS5:
 		p, err = proxy.NewSOCKS5()
 	default:

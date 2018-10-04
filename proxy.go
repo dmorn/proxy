@@ -80,13 +80,6 @@ func NewHTTP() (Proxy, error) {
 	return http.New(), nil
 }
 
-// NewHTTPS returns a new HTTPS proxy instance that speaks the protocol assigned.
-// d can also be nil, in that case the proxy will use a default dialer,
-// usually a bare net.Dialer.
-func NewHTTPS(cert, key string) (Proxy, error) {
-	return http.NewTLS(cert, key), nil
-}
-
 // NewSOCKS5 returns a new SOCKS5 proxy instance that speaks the protocol assigned.
 // d can also be nil, in that case the proxy will use a default dialer,
 // usually a bare net.Dialer.
