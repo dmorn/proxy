@@ -62,21 +62,29 @@ func New() *Proxy {
 		MaxHeaderBytes: 1 << 20,
 		TLSNextProto:   make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
+	p.C = &http.Client{Transport: makeTransport(nil)}
 
+	return p
+}
+
+func makeTransport(d dialer.Dialer) *http.Transport {
 	tr := &http.Transport{
 		MaxIdleConns:       10,
 		IdleConnTimeout:    30 * time.Second,
 		DisableCompression: true,
 	}
-	p.C = &http.Client{Transport: tr}
+	if d != nil {
+		tr.DialContext = d.DialContext
+	}
 
-	return p
+	return tr
 }
 
 // DialWith makes the receiver dial new connections using d, if d != nil.
-func (p *Proxy) DialWith(d *dialer.Dialer) {
+func (p *Proxy) DialWith(d dialer.Dialer) {
 	if d != nil {
-		p.Dialer = *d
+		p.Dialer = d
+		p.C.Transport = makeTransport(d)
 	}
 }
 

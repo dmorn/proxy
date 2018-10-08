@@ -108,9 +108,9 @@ func New() *Proxy {
 }
 
 // DialWith make the receiver use d for dialing TCP connections, if d != nil.
-func (s *Proxy) DialWith(d *dialer.Dialer) {
+func (s *Proxy) DialWith(d dialer.Dialer) {
 	if d != nil {
-		s.Dialer = *d
+		s.Dialer = d
 	}
 }
 

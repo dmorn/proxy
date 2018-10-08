@@ -44,7 +44,7 @@ type Proxy interface {
 	ListenAndServe(ctx context.Context, port int) error
 	// DialWith makes the proxy dial new connections with the
 	// assigned dialer.
-	DialWith(d *dialer.Dialer)
+	DialWith(d dialer.Dialer)
 }
 
 // Protocol is a wrapper around uint8.
