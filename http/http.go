@@ -129,11 +129,7 @@ func (p *Proxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 
 	defer resp.Body.Close()
 
-	CleanHeader(&resp.Header)
-	CopyHeader(w.Header(), resp.Header)
-
 	w.WriteHeader(http.StatusOK)
-
 	io.Copy(w, resp.Body)
 }
 
