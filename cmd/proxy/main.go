@@ -37,6 +37,7 @@ import (
 
 var port = flag.Int("port", 1080, "server listening port")
 var rawProto = flag.String("proto", "", "proxy protocol used. Available protocols: http, https, socks5")
+var verbose = flag.Bool("verbose", false, "enable verbose mode")
 
 func main() {
 	flag.Parse()
@@ -61,6 +62,11 @@ func main() {
 	}
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if *verbose {
+		log.Info.Printf("running in verbose mode")
+		log.SetLevel(log.DebugLevel)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
