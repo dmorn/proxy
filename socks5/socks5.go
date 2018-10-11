@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 tecnoporto
+Copyright (c) 2018 KIM KeepInMind Gmbh/srl
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -35,8 +35,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/tecnoporto/proxy/dialer"
-	"github.com/tecnoporto/proxy/transmit"
+	"github.com/booster-proj/proxy/dialer"
+	"github.com/booster-proj/proxy/log"
+	"github.com/booster-proj/proxy/transmit"
 )
 
 const (
@@ -135,7 +136,11 @@ func (s *Proxy) ListenAndServe(ctx context.Context, port int) error {
 				return
 			}
 
-			go s.Handle(ctx, conn)
+			go func() {
+				if err = s.Handle(ctx, conn); err != nil {
+					log.Error.Println(err)
+				}
+			}()
 		}
 	}()
 
@@ -191,17 +196,19 @@ func (s *Proxy) Handle(ctx context.Context, conn net.Conn) error {
 		return err
 	}
 
+	log.Debug.Printf("Handle: performing [%v] to: %v", prettyCmd(cmd), target)
+
 	var tconn net.Conn
-	ctx, cancel = context.WithTimeout(ctx, 10*time.Second)
+	_ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	switch cmd {
 	case socks5CmdConnect:
-		tconn, err = s.Connect(ctx, conn, target)
+		tconn, err = s.Connect(_ctx, conn, target)
 	case socks5CmdAssociate:
-		tconn, err = s.Associate(ctx, conn, target)
+		tconn, err = s.Associate(_ctx, conn, target)
 	case socks5CmdBind:
-		tconn, err = s.Bind(ctx, conn, target)
+		tconn, err = s.Bind(_ctx, conn, target)
 	default:
 		return errors.New("Handle: unexpected CMD(" + strconv.Itoa(int(cmd)) + ")")
 	}
@@ -211,8 +218,27 @@ func (s *Proxy) Handle(ctx context.Context, conn net.Conn) error {
 	defer tconn.Close()
 
 	// start proxying
-	ctx = transmit.NewContext(ctx, time.Second*30, 1500)
-	return transmit.Data(ctx, conn, tconn)
+	ptp := fmt.Sprintf("%v ⇄  %v (~> %v)", conn.LocalAddr(), tconn.RemoteAddr(), target)
+	log.Info.Printf("Handle: [%v] transmitting data ...", ptp)
+
+	ctx = transmit.NewContext(ctx, time.Minute*10, 1500)
+	if err = transmit.Data(ctx, conn, tconn); err != nil {
+		return errors.New(ptp + ": " + err.Error())
+	}
+	return nil
+}
+
+func prettyCmd(cmd uint8) string {
+	switch cmd {
+	case socks5CmdConnect:
+		return "Connect"
+	case socks5CmdAssociate:
+		return "Associate"
+	case socks5CmdBind:
+		return "Bind"
+	default:
+		return "Undefined"
+	}
 }
 
 // ReadAddress reads hostname and port and converts them

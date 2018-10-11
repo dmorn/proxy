@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 tecnoporto
+Copyright (c) 2018 KIM KeepInMind Gmbh/srl
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -83,7 +83,10 @@ func Data(ctx context.Context, src net.Conn, dst net.Conn) error {
 		return proxyData(ctx, dst, src)
 	})
 
-	return g.Wait()
+	if err := g.Wait(); err != nil && err != io.EOF {
+		return err
+	}
+	return nil
 }
 
 func proxyData(ctx context.Context, src net.Conn, dst net.Conn) error {

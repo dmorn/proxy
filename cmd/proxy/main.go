@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 tecnoporto
+Copyright (c) 2018 KIM KeepInMind Gmbh/srl
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,28 +28,26 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"log"
 	"os"
 	"os/signal"
 
-	"github.com/tecnoporto/proxy"
+	"github.com/booster-proj/proxy"
+	"github.com/booster-proj/proxy/log"
 )
 
 var port = flag.Int("port", 1080, "server listening port")
 var rawProto = flag.String("proto", "", "proxy protocol used. Available protocols: http, https, socks5")
 
-var logger = log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
-
 func main() {
 	flag.Parse()
 
 	if *rawProto == "" {
-		logger.Fatal(errors.New("proto flag is required"))
+		log.Fatal(errors.New("proto flag is required"))
 	}
 
 	proto, err := proxy.ParseProto(*rawProto)
 	if err != nil {
-		logger.Fatal(err)
+		log.Fatal(err)
 	}
 
 	var p proxy.Proxy
@@ -62,7 +60,7 @@ func main() {
 		err = errors.New("protocol (" + *rawProto + ") is not yet supported")
 	}
 	if err != nil {
-		logger.Fatal(err)
+		log.Fatal(err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -77,7 +75,7 @@ func main() {
 		}
 	}()
 
-	log.Printf("proxy (%v) listening on :%d", p.Protocol(), *port)
+	log.Info.Printf("proxy (%v) listening on :%d", p.Protocol(), *port)
 	if err := p.ListenAndServe(ctx, *port); err != nil {
 		log.Fatal(err)
 	}
