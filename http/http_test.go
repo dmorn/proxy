@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 tecnoporto
+Copyright (c) 2018 KIM KeepInMind Gmbh/srl
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@ import (
 	"net/http"
 	"testing"
 
-	proxy_http "github.com/tecnoporto/proxy/http"
+	proxy_http "github.com/booster-proj/proxy/http"
 )
 
 func TestCleanHeader(t *testing.T) {

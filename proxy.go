@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 tecnoporto
+Copyright (c) 2018 KIM KeepInMind Gmbh/srl
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,9 +30,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/tecnoporto/proxy/dialer"
-	"github.com/tecnoporto/proxy/http"
-	"github.com/tecnoporto/proxy/socks5"
+	"github.com/booster-proj/proxy/dialer"
+	"github.com/booster-proj/proxy/http"
+	"github.com/booster-proj/proxy/socks5"
 )
 
 // Proxy explains how a proxy should behave.

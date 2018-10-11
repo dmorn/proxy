@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2018 tecnoporto
+Copyright (c) 2018 KIM KeepInMind Gmbh/srl
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -36,8 +36,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/tecnoporto/proxy/dialer"
-	"github.com/tecnoporto/proxy/transmit"
+	"github.com/booster-proj/proxy/dialer"
+	"github.com/booster-proj/proxy/transmit"
 )
 
 var logger = log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
