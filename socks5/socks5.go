@@ -218,8 +218,15 @@ func (s *Proxy) Handle(ctx context.Context, conn net.Conn) error {
 	defer tconn.Close()
 
 	// start proxying
-	ptp := fmt.Sprintf("- %v ⇄  %v (~> %v) -", conn.LocalAddr(), tconn.RemoteAddr(), target)
-	log.Info.Printf("Handle: %v transmitting data ...", ptp)
+	start := time.Now()
+	ptp := fmt.Sprintf("%v ⇄  %v (~> %v)", conn.LocalAddr(), tconn.RemoteAddr(), target)
+
+	log.Info.Printf("Handle: %v => data transmission [BEGIN] (%v)", ptp, start)
+	defer func() {
+		end := time.Now()
+		d := end.Sub(start)
+		log.Info.Printf("Handle: %v => data transmission [END] (%v) d(%v)", ptp, end, d)
+	}()
 
 	ctx = transmit.NewContext(ctx, time.Minute*10, 1500)
 	if err = transmit.Data(ctx, conn, tconn); err != nil {
