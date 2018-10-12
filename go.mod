@@ -1,4 +1,4 @@
-module github.com/tecnoporto/proxy
+module github.com/booster-proj/proxy
 
 require (
 	golang.org/x/net v0.0.0-20180801234040-f4c29de78a2a // indirect
