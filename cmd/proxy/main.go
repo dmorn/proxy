@@ -35,12 +35,20 @@ import (
 	"github.com/booster-proj/proxy/log"
 )
 
+// Version and BuildTime are filled in during build by the Makefile
+var (
+	Version   = "N/A"
+	BuildTime = "N/A"
+)
+
 var port = flag.Int("port", 1080, "server listening port")
 var rawProto = flag.String("proto", "", "proxy protocol used. Available protocols: http, https, socks5")
 var verbose = flag.Bool("verbose", false, "enable verbose mode")
 
 func main() {
 	flag.Parse()
+
+	log.Info.Printf("Version: %s, BuildTime: %s\n\n", Version, BuildTime)
 
 	if *rawProto == "" {
 		log.Fatal(errors.New("proto flag is required"))

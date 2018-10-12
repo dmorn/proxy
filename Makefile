@@ -8,15 +8,21 @@ Q := $(if $V,,@)
 allpackages = $(shell ( cd $(CURDIR) && go list ./... ))
 gofiles = $(shell ( cd $(CURDIR) && find . -iname \*.go ))
 
-arch= "$(if $(GOARCH),_$(GOARCH)/,/)"
-bin = "$(CURDIR)/bin/$(GOOS)$(arch)"
+arch = "$(if $(GOARCH),_$(GOARCH)/,/)"
+bind = "$(CURDIR)/bin/$(GOOS)$(arch)"
 
 .PHONY: all
-all: proxy
+all: proxy # some executable
 
 .PHONY: proxy
 proxy:
-	$Q go build $(if $V,-v) -o $(bin)/proxy $(VERSION_FLAGS) $(CURDIR)/cmd/proxy
+	$Q go build $(if $V,-v) -o $(bind)/proxy $(VERSION_FLAGS) $(CURDIR)/cmd/proxy
+
+# Adding another target
+#
+#.PHONY: otherbin
+#otherbin:
+#	$Q go build $(if $V,-v) -o $(bind)/otherbin $(VERSION_FLAGS) $(CURDIR)/cmd/otherbin
 
 .PHONY: clean
 clean:
