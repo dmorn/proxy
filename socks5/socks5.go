@@ -36,7 +36,7 @@ import (
 	"time"
 
 	"github.com/booster-proj/proxy/dialer"
-	"github.com/booster-proj/proxy/log"
+	"github.com/booster-proj/log"
 	"github.com/booster-proj/proxy/transmit"
 )
 

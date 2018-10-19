@@ -32,7 +32,7 @@ import (
 	"os/signal"
 
 	"github.com/booster-proj/proxy"
-	"github.com/booster-proj/proxy/log"
+	"github.com/booster-proj/log"
 )
 
 // Version and BuildTime are filled in during build by the Makefile
@@ -49,6 +49,10 @@ func main() {
 	flag.Parse()
 
 	log.Info.Printf("Version: %s, BuildTime: %s\n\n", Version, BuildTime)
+	if *verbose {
+		log.Info.Printf("running in verbose mode")
+		log.SetLevel(log.DebugLevel)
+	}
 
 	if *rawProto == "" {
 		log.Fatal(errors.New("proto flag is required"))
@@ -70,11 +74,6 @@ func main() {
 	}
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	if *verbose {
-		log.Info.Printf("running in verbose mode")
-		log.SetLevel(log.DebugLevel)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
