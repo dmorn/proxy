@@ -31,8 +31,8 @@ import (
 	"os"
 	"os/signal"
 
+	"upspin.io/log"
 	"github.com/booster-proj/proxy"
-	"github.com/booster-proj/log"
 )
 
 // Version and BuildTime are filled in during build by the Makefile
@@ -51,7 +51,7 @@ func main() {
 	log.Info.Printf("Version: %s, BuildTime: %s\n\n", Version, BuildTime)
 	if *verbose {
 		log.Info.Printf("running in verbose mode")
-		log.SetLevel(log.DebugLevel)
+		log.SetLevel("debug")
 	}
 
 	if *rawProto == "" {
