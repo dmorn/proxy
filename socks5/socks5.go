@@ -35,9 +35,9 @@ import (
 	"strconv"
 	"time"
 
-	"upspin.io/log"
 	"github.com/booster-proj/proxy/dialer"
 	"github.com/booster-proj/proxy/transmit"
+	"upspin.io/log"
 )
 
 const (
@@ -219,13 +219,13 @@ func (s *Proxy) Handle(ctx context.Context, conn net.Conn) error {
 
 	// start proxying
 	start := time.Now()
-	ptp := fmt.Sprintf("%v ⇄  %v (~> %v)", conn.LocalAddr(), tconn.RemoteAddr(), target)
+	ptp := fmt.Sprintf("%v <->  %v (~> %v)", conn.LocalAddr(), tconn.RemoteAddr(), target)
 
-	log.Info.Printf("Handle: %v => data transmission [BEGIN]", ptp)
+	log.Debug.Printf("Handle: %v => data transmission [BEGIN]", ptp)
 	defer func() {
 		end := time.Now()
 		d := end.Sub(start)
-		log.Info.Printf("Handle: %v => data transmission [END] d(%v)", ptp, d)
+		log.Debug.Printf("Handle: %v => data transmission [END] d(%v)", ptp, d)
 	}()
 
 	ctx = transmit.NewContext(ctx, time.Minute*10, 1500)
