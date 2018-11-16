@@ -1,5 +1,3 @@
-github.com/booster-proj/log v0.0.0-20181018152734-1237d1c945a4 h1:tFWX9r7OjrMXGbKscxezPtNIqkrV7j9/cKGzNlf5ObE=
-github.com/booster-proj/log v0.0.0-20181018152734-1237d1c945a4/go.mod h1:DqLh+BshcSvoy7vIjff2JF5Z3dRMxhuK/+GA/fDIP1Q=
 golang.org/x/net v0.0.0-20180801234040-f4c29de78a2a h1:8fCF9zjAir2SP3N+axz9xs+0r4V8dqPzqsWO10t8zoo=
 golang.org/x/net v0.0.0-20180801234040-f4c29de78a2a/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
 golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f h1:wMNYb4v58l5UBM7MYRLPG6ZhfOqbKu7X5eyFl8ZhKvA=
