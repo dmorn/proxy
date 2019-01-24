@@ -213,7 +213,7 @@ func (s *Proxy) Handle(ctx context.Context, conn net.Conn) error {
 		return errors.New("Handle: unexpected CMD(" + strconv.Itoa(int(cmd)) + ")")
 	}
 	if err != nil {
-		return err
+		return errors.New("Handle: unable to perform CMD(" + strconv.Itoa(int(cmd)) + "): " + err.Error())
 	}
 	defer tconn.Close()
 
